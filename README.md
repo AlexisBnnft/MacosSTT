@@ -26,25 +26,6 @@ cp .env.example .env
 
 Hold **Right Option** to record, release to transcribe. Text is automatically pasted at cursor.
 
-## Keyboard Shortcut (⌘0)
-
-Toggle the app with a global hotkey:
-
-1. Open **Automator** → New **Quick Action**
-2. Set "Workflow receives" to **no input**
-3. Add **Run Shell Script** action
-4. Paste:
-   ```bash
-   if pgrep -f "willow.py" > /dev/null; then
-       pkill -f "willow.py"
-       pkill -x "WillowIndicator"
-   else
-       /PATH/TO/MacosSTT/start.sh &
-   fi
-   ```
-5. Save as "Toggle Willow"
-6. **System Settings → Keyboard → Keyboard Shortcuts → Services** → Assign ⌘0
-
 ## Requirements
 
 - macOS (tested on Sonoma)
