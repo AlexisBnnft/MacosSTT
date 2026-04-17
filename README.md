@@ -19,20 +19,33 @@ Minimal voice transcription for macOS with two recording modes: push-to-talk and
 
 ## Setup
 
-### 1. Install Python dependencies
+### Quick start
+
+```bash
+./setup
+```
+
+Installs Python deps, builds the Swift indicator, and prompts for your OpenAI API key. Then grant permissions (step 2 below) and run `./start.sh`.
+
+### Manual setup
+
+<details>
+<summary>Prefer to do it by hand</summary>
+
+#### 1. Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure API key
+#### 2. Configure API key
 
 Create `.env` file:
 ```
 OPENAI_API_KEY=sk-your-key-here
 ```
 
-### 3. Build the indicator
+#### 3. Build the indicator
 
 ```bash
 cd WillowIndicator
@@ -40,7 +53,9 @@ swift build -c release
 cd ..
 ```
 
-### 4. Grant permissions
+</details>
+
+### Grant permissions
 
 In System Settings > Privacy & Security:
 - **Accessibility**: Add Terminal (or your terminal app)
@@ -71,6 +86,7 @@ WillowLike/
 ├── WillowIndicator/       # Swift app for visual indicator
 │   ├── Package.swift
 │   └── Sources/main.swift
+├── setup                  # One-shot installer (deps + build + API key prompt)
 ├── start.sh               # Launch script
 ├── requirements.txt
 └── .env                   # API key (not committed)
