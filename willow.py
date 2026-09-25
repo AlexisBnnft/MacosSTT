@@ -8,6 +8,7 @@ Requires the WillowIndicator Swift app running for the visual indicator.
 
 import atexit
 import io
+import json
 import signal
 import subprocess
 import sys
@@ -29,6 +30,8 @@ HOTKEY = keyboard.Key.alt_r
 DOUBLE_TAP_THRESHOLD = 0.3  # seconds – max delay between two taps
 HOLD_THRESHOLD = 0.25  # seconds – hold longer than this = push-to-talk
 STATE_FILE = Path("/tmp/willow_state")
+HISTORY_FILE = Path.home() / ".willow" / "history.jsonl"
+HISTORY_MAX = 200  # keep the file small; the indicator shows the last 4
 
 
 def set_state(state: str, level: float = 0.0):
@@ -38,6 +41,19 @@ def set_state(state: str, level: float = 0.0):
     else:
         print(f"[STATE] -> {state}")
         STATE_FILE.write_text(state)
+
+
+def save_history(text: str):
+    """Append a transcript to the history read by the indicator's panel."""
+    try:
+        HISTORY_FILE.parent.mkdir(exist_ok=True)
+        with HISTORY_FILE.open("a") as f:
+            f.write(json.dumps({"t": time.time(), "text": text}, ensure_ascii=False) + "\n")
+        lines = HISTORY_FILE.read_text().splitlines()
+        if len(lines) > HISTORY_MAX * 2:
+            HISTORY_FILE.write_text("\n".join(lines[-HISTORY_MAX:]) + "\n")
+    except OSError as e:
+        print(f"✗ history: {e}")
 
 
 class WillowApp:
@@ -167,6 +183,9 @@ class WillowApp:
         buffer.seek(0)
         buffer.name = "audio.wav"
 
+        # Backup before the API call — recoverable from /tmp/willow_last.wav on failure
+        Path("/tmp/willow_last.wav").write_bytes(buffer.getvalue())
+
         try:
             result = self.client.audio.transcriptions.create(
                 model="whisper-1",
@@ -181,8 +200,13 @@ class WillowApp:
                     'tell application "System Events" to keystroke "v" using command down'
                 ], check=True)
                 print(f"✓ {text}")
+                save_history(text)
+                set_state("done")  # indicator shows a check, then retracts
+                return
         except Exception as e:
             print(f"✗ {e}")
+            set_state("error")
+            return
 
         set_state("idle")
 

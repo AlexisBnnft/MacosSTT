@@ -6,7 +6,8 @@ Minimal voice transcription for macOS with two recording modes: push-to-talk and
 
 - **Push-to-talk**: Hold Right Option to record, release to transcribe
 - **Double-tap toggle**: Tap Right Option twice quickly to start hands-free recording, tap again to stop
-- Visual indicator dot near the notch (grey=idle, red=recording, orange=processing)
+- Notch indicator: invisible when idle, drops out of the notch while recording (red dot, level bars, timer), orange while transcribing, check when pasted. Works in fullscreen apps too
+- Click the notch to see your last 4 transcripts: click one to copy it, ⌥-click to paste it at the cursor
 - Uses OpenAI Whisper for transcription
 - Auto-pastes transcribed text
 
@@ -68,8 +69,8 @@ In System Settings > Privacy & Security:
 ```
 
 **Push-to-talk:**
-- Hold **Right Option** to record (dot turns red)
-- Release to transcribe (dot turns orange)
+- Hold **Right Option** to record (the notch drops down, red dot)
+- Release to transcribe (orange)
 - Text is auto-pasted at cursor
 
 **Hands-free (double-tap toggle):**
@@ -97,10 +98,11 @@ WillowLike/
 1. **willow.py** listens for Right Option key using `pynput`
 2. Detects hold (push-to-talk) vs double-tap (toggle mode)
 3. Starts recording audio via `sounddevice`
-4. Writes state to `/tmp/willow_state` (idle/recording/processing)
-5. **WillowIndicator** polls this file every 100ms and updates dot color
+4. Writes state to `/tmp/willow_state` (idle/recording/processing/done/error)
+5. **WillowIndicator** polls this file at 30 Hz and animates the notch at 60 fps
 6. On stop, sends audio to Whisper API
 7. Pastes result using `pbcopy` + AppleScript keystroke
+8. Appends the transcript to `~/.willow/history.jsonl` (last 200 kept), which the notch panel reads
 
 ## Customization
 
@@ -112,15 +114,8 @@ HOTKEY = keyboard.Key.alt_r  # Change to any pynput key
 DOUBLE_TAP_THRESHOLD = 0.3   # Adjust double-tap speed (seconds)
 ```
 
-### Move indicator position
+### Change the indicator look
 
-In `WillowIndicator/Sources/main.swift`, adjust:
-```swift
-let x = screenFrame.midX + 100  // Horizontal offset from center
-```
+In `WillowIndicator/Sources/main.swift`, `NotchView` holds the sizes (`dropExtraW`, `dropExtraH`, `panelW`) and `IndicatorState.color` the colors. The notch width is read from the screen, so it adapts to any notched MacBook; on a screen without a notch the drop comes out of the top center of the menu bar.
 
 Then rebuild: `cd WillowIndicator && swift build -c release`
-
-### Change colors
-
-In `main.swift`, modify the `IndicatorState.color` property.
